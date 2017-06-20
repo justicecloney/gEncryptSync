@@ -1,3 +1,5 @@
+// #include <iostream>
+// #include <iomanip>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -72,10 +74,12 @@ void Watcher::init(std::string directoryGiven){
 }
 
 int walkerAddToWatchList (const char *fpath, const struct stat *sb, int typeflag) {
-    
     if (typeflag == FTW_D){
+        printf("walker found directory : %s\n", fpath);
         int newFD = inotify_init();
         int newWD = inotify_add_watch(newFD, fpath, IN_CREATE | IN_MODIFY | IN_DELETE | IN_MOVED_TO | IN_MOVED_FROM);
+        printf("walker thinks fd is %d\n", newFD);
+        printf("walker thinks wd is %d\n", newWD);
         descriptorList.emplace_back(newFD,newWD);
         // watchDescriptorList.push_back(inotify_add_watch(fd, directory, IN_CREATE | IN_MODIFY | IN_DELETE | IN_MOVED_TO | IN_MOVED_FROM));
     }
@@ -84,77 +88,83 @@ int walkerAddToWatchList (const char *fpath, const struct stat *sb, int typeflag
 void Watcher::watchMaster () {
 
     /* do it forever*/
+    printf("beginning the while(1) loop\n");
     while (1) {
-        i = 0;
-        readLength = read( fd, buffer, BUF_LEN );
+        for (auto& info : descriptorList){
+            i = 0;
+            readLength = read( info.fileDescriptor, buffer, BUF_LEN );
+            if ( readLength < 0 ) {
+                perror( "read" );
+            }
 
-        if ( readLength < 0 ) {
-            perror( "read" );
-        }
+            while ( i < readLength ) {
+                struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
+                if ( event->len ) {
+                    if ( event->mask & IN_CREATE) {
+                        if (event->mask & IN_ISDIR) {
+                            printf( "The directory %s was Created.\n", event->name );
+                            
+                            addToWatchList (event->name);
+                        }
+                        else {
+                            printf( "The file %s was Created with WD %d\n", event->name, event->wd );
+                        }
+                    }
 
-        while ( i < readLength ) {
-            struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
-            if ( event->len ) {
-                if ( event->mask & IN_CREATE) {
-                    if (event->mask & IN_ISDIR) {
-                        printf( "The directory %s was Created.\n", event->name );
-                        addToWatchList (event->name);
+                    if ( event->mask & IN_MODIFY) {
+                        if (event->mask & IN_ISDIR) {
+                            printf( "The directory %s was modified.\n", event->name );
+                            addToWatchList (event->name);
+                        }
+                        else {
+                            printf( "The file %s was modified with WD %d\n", event->name, event->wd );
+                        }
                     }
-                    else {
-                        printf( "The file %s was Created with WD %d\n", event->name, event->wd );
+
+                    if ( event->mask & IN_DELETE) {
+                        if (event->mask & IN_ISDIR) {
+                            printf( "The directory %s was deleted.\n", event->name );
+                            destroyAWatch (info.fileDescriptor, info.watchDescriptor);
+                        }
+                        else {
+                            printf( "The file %s was deleted with WD %d\n", event->name, event->wd );
+                        }
                     }
+
+                    if ( event->mask & IN_MOVED_TO) {
+                        if (event->mask & IN_ISDIR) {
+                            printf( "The directory %s was moved in.\n", event->name );
+                            addToWatchList (event->name);
+                        }
+                        else {
+                            printf( "The file %s was moved in WD %d\n", event->name, event->wd );
+                        }
+                    }
+
+                    if ( event->mask & IN_MOVED_FROM) {
+                        if (event->mask & IN_ISDIR) {
+                            printf( "The directory %s was moved out.\n", event->name );
+                            destroyAWatch (info.fileDescriptor, info.watchDescriptor);
+                        }
+                        else {
+                            printf( "The file %s was moved out WD %d\n", event->name, event->wd );
+                        }
+                    }
+                    i += EVENT_SIZE + event->len;
                 }
-
-                if ( event->mask & IN_MODIFY) {
-                    if (event->mask & IN_ISDIR) {
-                        printf( "The directory %s was modified.\n", event->name );
-                        addToWatchList (event->name);
-                    }
-                    else {
-                        printf( "The file %s was modified with WD %d\n", event->name, event->wd );
-                    }
-                }
-
-                if ( event->mask & IN_DELETE) {
-                    if (event->mask & IN_ISDIR) {
-                        printf( "The directory %s was deleted.\n", event->name );
-                        destroyAWatch (fd, wd);
-                    }
-                    else {
-                        printf( "The file %s was deleted with WD %d\n", event->name, event->wd );
-                    }
-                }
-
-                if ( event->mask & IN_MOVED_TO) {
-                    if (event->mask & IN_ISDIR) {
-                        printf( "The directory %s was moved in.\n", event->name );
-                        addToWatchList (event->name);
-                    }
-                    else {
-                        printf( "The file %s was moved in WD %d\n", event->name, event->wd );
-                    }
-                }
-
-                if ( event->mask & IN_MOVED_FROM) {
-                    if (event->mask & IN_ISDIR) {
-                        printf( "The directory %s was moved out.\n", event->name );
-                        destroyAWatch (fd, wd);
-                    }
-                    else {
-                        printf( "The file %s was moved out WD %d\n", event->name, event->wd );
-                    }
-                }
-                i += EVENT_SIZE + event->len;
             }
         }
     }
 
     /* Clean up*/
-    inotify_rm_watch( fd, wd );
-    close( fd );
+    // inotify_rm_watch( fd, wd );
+    // close( fd );
 }
 int Watcher::addToWatchList (char *fpath) {
-    watchDescriptorList.push_back(inotify_add_watch(fd, fpath, IN_CREATE | IN_MODIFY | IN_DELETE | IN_MOVED_TO | IN_MOVED_FROM));
+    int newFD = inotify_init();
+    int newWD = inotify_add_watch(newFD, fpath, IN_CREATE | IN_MODIFY | IN_DELETE | IN_MOVED_TO | IN_MOVED_FROM);
+    descriptorList.emplace_back(newFD,newWD);
+    // watchDescriptorList.push_back(inotify_add_watch(fd, fpath, IN_CREATE | IN_MODIFY | IN_DELETE | IN_MOVED_TO | IN_MOVED_FROM));
     return 0;
 }
 void Watcher::destroyAWatch (int fileDescriptor, int watchDescriptor){
