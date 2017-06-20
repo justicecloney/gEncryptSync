@@ -7,8 +7,18 @@ Currently working on :
 Planning
 
 Todo:
-    
+    check last modified date
+    make tree of last upload times
+        save the tree
     set/change directory watched
+    compare last modified
+        if modified since last upload, re-"upload"
+    make it loop
+    // at this point the only debug output I want is "change detected"
     upload to google
     encrypt
     store keys
+
+
+Things that work:
+    watcher successfully scans directories recursively and returns both files and folders found with a relative path to watched directory.
