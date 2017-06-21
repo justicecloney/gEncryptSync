@@ -1,5 +1,5 @@
-// #include <iostream>
-// #include <iomanip>
+#include <iostream>
+#include <iomanip>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -12,6 +12,7 @@
 #include <ftw.h>
 #include <dirent.h>
 #include "watcher.h"
+#include <time.h>
 
 int walkerAddToWatchList (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 
@@ -40,18 +41,13 @@ int walkerAddToWatchList (const char *fpath, const struct stat *sb, int typeflag
 
     if (typeflag == FTW_D){
         printf("walker found directory : %s\n", fpath);
-        // printf("full path : %s\n", ftwbuf->base);
-
-        // int newFD = inotify_init();
-        // int newWD = inotify_add_watch(newFD, fpath, IN_CREATE | IN_MODIFY | IN_DELETE | IN_MOVED_TO | IN_MOVED_FROM);
-        // printf("walker thinks fd is %d\n", newFD);
-        // printf("walker thinks wd is %d\n", newWD);
-        // descriptorList.emplace_back(newFD,newWD);
-        // watchDescriptorList.push_back(inotify_add_watch(fd, directory, IN_CREATE | IN_MODIFY | IN_DELETE | IN_MOVED_TO | IN_MOVED_FROM));
     }
     else {
         printf("walker found file : %s\n", fpath);
     }
+    printf("it's last modification was : %s\n", ctime(&sb->st_mtim.tv_sec)); // ctime has a carriage return at the end of it.
+    printf("that's the integer %s\n", std::to_string(sb->st_mtim.tv_sec).c_str());
+    // printf("it's last status change was : %s\n", sb->st_ctim);
     return 0;
 }
 
@@ -59,18 +55,3 @@ int walkerAddToWatchList (const char *fpath, const struct stat *sb, int typeflag
 Watcher::~Watcher(){
 
 }
-    // #include <dirent.h>
-    // DIR *dir;
-    // struct dirent *ent;
-    // if ((dir = opendir (directoryGiven)) != NULL) {
-    //     while ((ent = readdir (dir)) != NULL) {
-    //         if ( strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0){
-    //             printf ("%s\n", ent->d_name);
-    //         }
-    //     }
-    //     closedir (dir);
-    // }
-    // else {
-    //     perror ("");
-    //     return EXIT_FAILURE;
-    // }
