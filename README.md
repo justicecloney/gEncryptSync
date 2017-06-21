@@ -7,19 +7,19 @@ Currently working on :
 make tree of last upload times
 
 Todo:
-    -make tree of last upload times
-        -make my tree object
-        -make my dir object
-        -make my file object
-        -save the tree object
-    -set/change directory watched
-    -compare last modified
-        -if modified since last upload, re-"upload"
-    -make it loop
-    -// at this point the only debug output I want is "change detected"
-    -upload to google
-    -encrypt
-    -store keys
+-make tree of last upload times
+    -make my tree object
+    -make my dir object
+    -make my file object
+    -save the tree object
+-set/change directory watched
+-compare last modified
+    -if modified since last upload, re-"upload"
+-make it loop
+-// at this point the only debug output I want is "change detected"
+-upload to google
+-encrypt
+-store keys
 
 
 Things that work:
