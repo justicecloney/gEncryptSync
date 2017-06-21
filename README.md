@@ -4,12 +4,14 @@ Scans for file changes, encrypts the file, then uploads to a google drive accoun
 Watching every directory has been found to be impractical. Instead I will now scan subdirectories periodically to search for changes.
 
 Currently working on :
-Planning
+make tree of last upload times
 
 Todo:
-    check last modified date
     make tree of last upload times
-        save the tree
+        make my tree object
+        make my dir object
+        make my file object
+        save the tree object
     set/change directory watched
     compare last modified
         if modified since last upload, re-"upload"
@@ -22,3 +24,4 @@ Todo:
 
 Things that work:
     watcher successfully scans directories recursively and returns both files and folders found with a relative path to watched directory.
+    check last modified date
